@@ -1,1 +1,91 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ── Virtual environments ───────────────────────────────────────────────────────
 .venv/
+venv/
+env/
+ENV/
+
+# ── Environment / secrets ──────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets.json
+
+# ── Data files ─────────────────────────────────────────────────────────────────
+data/
+datasets/
+*.csv
+*.tsv
+*.json
+!package.json
+!package-lock.json
+*.jsonl
+*.parquet
+*.feather
+*.arrow
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Model artifacts ────────────────────────────────────────────────────────────
+models/
+*.pt
+*.pth
+*.onnx
+*.joblib
+*.bin
+*.safetensors
+checkpoints/
+runs/
+outputs/
+artifacts/
+
+# ── Logs & reports ─────────────────────────────────────────────────────────────
+logs/
+*.log
+*.out
+*.err
+reports/
+*.html
+!web/**/*.html
+
+# ── Jupyter ────────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ── Node / frontend ────────────────────────────────────────────────────────────
+node_modules/
+web/node_modules/
+web/dist/
+web/build/
+.pnp.*
+.yarn/
+
+# ── OS / editor ────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~

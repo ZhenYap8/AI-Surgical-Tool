@@ -48,12 +48,19 @@ Open browser at: `http://localhost:5173`
   "tool_changes": 3,
   "fine_motor_ratio": "high",
   "workspace_constraint": "tight",
-  "time_of_day": "afternoon"
+  "time_of_day": "afternoon",
+  "surgeon_level": "ST1-7",
+  "procedure_count": 25,
+  "overrun_freq": 0.1,
+  "risk_index": 5
 }
 ```
 
 ## Logic Overview
-1. **P50/P80/P90**: Calculated via heuristics based on base task duration + multipliers (complexity, distance, traffic, speed).
+1. **P50/P80/P90**: Calculated via heuristics based on base task duration + multipliers.
+   - **Surgeon Profile**: Adjusts efficiency based on grade (Consultant/Registrar/CT) and procedure volume.
+   - **Risk Index**: Adjusts for speed vs. caution trade-offs (High index = slower but consistent).
+   - **Environmental**: Complexity, distance, traffic, speed.
 2. **Risk Color**: 
    - 🟢 Green: Booked >= P80
    - 🟠 Amber: P50 <= Booked < P80
