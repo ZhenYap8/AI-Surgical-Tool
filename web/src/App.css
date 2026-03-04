@@ -882,6 +882,103 @@ body {
   color: var(--grey-500);
 }
 
+/* ── Procedure Search Combobox ─────────────────────────────────────────────── */
+.procedure-combobox {
+  position: relative;
+  width: 100%;
+}
+
+.procedure-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.procedure-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 13px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.procedure-search-input {
+  padding-left: 32px !important;
+  padding-right: 32px !important;
+}
+
+.procedure-clear-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  color: var(--grey-500);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.procedure-clear-btn:hover {
+  color: var(--grey-900);
+  background: var(--grey-100);
+}
+
+.procedure-suggestions-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 4px 0;
+  z-index: 100;
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.procedure-suggestion-item {
+  padding: 9px 14px;
+  font-size: 13px;
+  color: var(--grey-700);
+  cursor: pointer;
+  transition: background 0.12s, color 0.12s;
+}
+.procedure-suggestion-item:hover,
+.procedure-suggestion-item.active {
+  background: var(--blue);
+  color: var(--white);
+}
+.procedure-suggestion-item mark.suggestion-match {
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.procedure-suggestion-item.active mark.suggestion-match {
+  color: var(--white);
+}
+
+.procedure-no-match {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--grey-200);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 12px;
+  color: var(--grey-500);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+}
+
 /* ── Footer ────────────────────────────────────────────────────────────────── */
 .app-footer {
   text-align: center;

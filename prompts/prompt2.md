@@ -1,74 +1,178 @@
-Update the front-end so the “Surgeon Profile Module” is no longer a single static form. It should become a clickable “Profile” system where users can create, view, and edit multiple surgeon profiles.
+# Surgeon Profile Module — Implemented Spec
 
-Implement the following UI + behaviour:
+This document describes the **current implemented state** of the Surgeon Profile Module in the frontend (`web/src/App.jsx` + `web/src/App.css`).
 
-1) Profile Entry Point
-- Replace the current module with a compact “Profile Selector” header:
-  - Title: “Surgeon Profiles”
-  - A dropdown (or list) to select an existing profile by name
-  - Button: “+ Add Profile”
-  - Button: “Edit”
-- When a profile is selected, show a read-only summary card (name, grade, years, procedure count, skill tags).
+---
 
-2) Profile Drawer / Modal
-- Clicking “+ Add Profile” or “Edit” opens a modal (or right-side drawer) with a form.
-- The form saves to local state and persists to localStorage (for now).
-- Support CRUD:
-  - Create new profile
-  - Update existing profile
-  - Delete profile (with confirm)
+## Overview
 
-3) Inside the profile form, there are TWO tag sections:
+The Surgeon Profile Module replaces a static form with a multi-profile system. Users can create, view, edit, and delete named surgeon profiles. A selected profile automatically calibrates the prediction engine (e.g. auto-sets experience level from grade).
 
-A) Tag Section 1: Doctor Experience (Grade)
-- Label: “Doctor Experience”
-- Required single-select field: “Surgeon Grade”
-- Use a pill/tag UI (not a dropdown) with options like:
-  - CT1, CT2
-  - ST1, ST2, ST3, ST4, ST5, ST6, ST7
-  - Consultant (<5 years), Consultant (5+ years)
-- Only ONE grade can be selected at a time.
-- Store as: profile.grade
+---
 
-B) Tag Section 2: Skillsets (Hashtag-style)
-- Label: “Skillsets”
-- Input box where user types a skill and presses Enter to add a tag (like hashtags).
-- Tags appear as removable chips/pills.
-- Prevent duplicates (case-insensitive).
-- Max 12 tags, and max 20 characters per tag.
-- Example placeholder: “Type a skill and press Enter (e.g., cataract, laparoscopy, robotics)”
-- Store as: profile.skills (string array)
+## 1. Profile Entry Point (Card in Left Panel)
 
-4) Profile Fields
-In the same modal, include:
-- Profile name (required)
-- Procedures performed (number input)
-- Risk/Consistency index (0–10 slider) + live numeric value
-- (Optional) Primary procedure type (text or select)
+A `profile-card` component sits at the top of the left input panel. It contains:
 
-5) Data Model
-Use this shape:
+- **Card header row**: title `"Surgeon Profiles"` (left) + `"+ Add Profile"` button (right, blue pill style)
+- **Profile selector row**: a `<select>` dropdown listing all saved profiles by name, with an inline `Edit` button that appears only when a profile is selected
+- **Read-only Summary Card** (shown when a profile is selected):
+  - Profile name (bold)
+  - Grade pill (highlighted, same style as modal pill)
+  - Primary procedure (if set)
+  - Procedures performed count
+  - Risk Index badge (`RI X / 10`)
+  - Skill hashtag chips (`#skill`)
+  - An `Edit` button (top-right of card)
+- **Empty state** (shown when no profile is selected): ghost icon + hint text
+
+---
+
+## 2. Profile Modal
+
+Clicking `"+ Add Profile"` or `"Edit"` opens a centred modal overlay (`modal-overlay` → `modal-content`) with a smooth slide-in animation.
+
+Clicking outside the modal (on the overlay) closes it.
+
+**Modal structure:**
+- `modal-header`: title (`"New Surgeon Profile"` or `"Edit Profile"`) + `✕` close button
+- `modal-body`: scrollable form content
+- `modal-footer`: `Delete Profile` button (red, left, only on edit) + `Cancel` / `Save Changes` or `Create Profile` buttons (right)
+
+---
+
+## 3. Profile Form Fields
+
+### Basic Fields (inside `modal-body`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| Full Name | Text input | Required. Shows inline error if empty. |
+| Total Procedures | Number input | Min 0. Stored as `proceduresPerformed`. |
+| Primary Procedure | Text input | Optional. e.g. "Laparoscopic Cholecystectomy" |
+
+### Tag Section 1 — Doctor Experience (Grade)
+
+- **Label**: `"Doctor Experience *"`
+- **Helper text**: "Select one grade — this auto-sets the experience level in the prediction engine."
+- **UI**: A wrapping row of pill/chip buttons (`grade-pills` → `grade-pill`)
+- **Behaviour**: Single-select only. Selected pill gets `.selected` class (solid blue fill, white text). Clicking another grade deselects the previous one.
+- **Options**:
+  - Core Trainee: `CT1`, `CT2`
+  - Specialty Trainee: `ST1`, `ST2`, `ST3`, `ST4`, `ST5`, `ST6`, `ST7`
+  - Consultant: `Consultant (<5 yrs)`, `Consultant (5+ yrs)`
+- **Stored as**: `profile.grade` (string)
+- **Validation**: Required. Shows inline error if not selected on save.
+
+### Tag Section 2 — Skillsets (Hashtag-style)
+
+- **Label**: `"Skillsets"` + tag count badge (`X / 12`, right-aligned)
+- **Helper text**: "Type a skill and press Enter to add it as a tag."
+- **UI**: `tag-input-container` — a flex-wrap box containing existing chips + a live inline text input
+- **Chip style** (`edit-chip`): `#skillname` with a `✕` remove button
+- **Behaviour**:
+  - Press `Enter` to add the current input value as a chip
+  - Normalised to lowercase, trimmed
+  - Duplicates silently ignored (no error)
+  - Max **12 tags**, max **20 characters** per tag
+  - Input disabled when at 12 tags
+  - Placeholder changes: empty → long hint; has tags → `"Add another…"`; full → `""`
+- **Stored as**: `profile.skills` (string array)
+
+### Risk / Consistency Index Slider
+
+- **Label**: `"Risk / Consistency Index"` + live value badge (right-aligned)
+- **Range**: 0–10
+- **Labels**: `"0 — Fast / Risky"` (left) · `"10 — Slow / Cautious"` (right)
+- **Stored as**: `profile.riskIndex` (number)
+
+---
+
+## 4. Grade → Experience Level Auto-Mapping
+
+When a profile is selected from the dropdown, the `experience_level` field in the Training Parameters form is automatically updated using this map:
+
+| Grade | Experience Level |
+|-------|----------------|
+| CT1, CT2, ST1, ST2 | novice |
+| ST3, ST4, ST5 | intermediate |
+| ST6, ST7, Consultant (<5 yrs), Consultant (5+ yrs) | advanced |
+
+An `auto` green badge appears next to the Experience Level label when a profile is active.
+
+---
+
+## 5. Data Model
+
+```js
 {
-  id: string,
-  name: string,
-  grade: string,
+  id: string,              // generated: Date.now().toString(36) + random
+  name: string,            // required
+  grade: string,           // required, e.g. "ST3"
   proceduresPerformed: number,
-  riskIndex: number,
-  skills: string[],
-  createdAt: number,
-  updatedAt: number
+  primaryProcedure: string, // optional
+  riskIndex: number,       // 0–10
+  skills: string[],        // lowercase, max 12
+  createdAt: number,       // Unix ms timestamp
+  updatedAt: number        // Unix ms timestamp
 }
+```
 
-6) UX/Styling Requirements
-- Keep the design clean and clinical.
-- Tags should look like “chips” with an X to remove.
-- Use consistent spacing and alignment with the rest of the module.
-- The selected grade pill should visually highlight.
-- Provide validation errors inline (e.g., missing name or grade).
+---
 
-Return the updated component code with:
-- Profile selector UI
-- Modal/drawer form
-- localStorage persistence
-- Tag section 1 (single-select grade chips)
-- Tag section 2 (hashtag-style skill chips)
+## 6. Persistence
+
+Profiles are saved to **`localStorage`** under the key `"surgeon_profiles"` as a JSON array. State is re-read on mount and written on every change via `useEffect`.
+
+---
+
+## 7. CRUD Behaviour
+
+| Action | Trigger | Result |
+|--------|---------|--------|
+| Create | `"+ Add Profile"` → fill form → `"Create Profile"` | New profile added, auto-selected in dropdown |
+| Read | Select from dropdown | Summary card rendered read-only |
+| Update | `"Edit"` → change fields → `"Save Changes"` | Profile updated in-place, `updatedAt` refreshed |
+| Delete | `"Edit"` → `"Delete Profile"` → `window.confirm` | Profile removed, dropdown reset to empty |
+
+---
+
+## 8. Validation
+
+- **Name**: required — shows `"Name is required."` below the input if empty on save attempt
+- **Grade**: required — shows `"Please select a grade."` below the pill group if none selected on save attempt
+- Validation re-runs on every save attempt; errors clear on the next successful save
+
+---
+
+## 9. CSS Classes Reference
+
+| Class | Purpose |
+|-------|---------|
+| `.profile-card` | Outer card wrapper |
+| `.btn-add-profile` | Blue pill `"+ Add Profile"` button |
+| `.profile-selector-row` | Flex row: dropdown + Edit button |
+| `.profile-select` | The `<select>` element, `flex: 1` |
+| `.btn-edit-inline` | Edit button beside the dropdown |
+| `.profile-summary-card` | Read-only selected profile display |
+| `.profile-name` | Bold name in summary card |
+| `.profile-meta` | Flex row of grade pill + meta items |
+| `.ri-badge` | Grey pill showing `RI X / 10` |
+| `.btn-edit-profile` | Edit button inside summary card |
+| `.skill-chip` | Read-only `#skill` chip in summary |
+| `.profile-empty` | Empty state hint block |
+| `.grade-pills` | Flex-wrap row of grade buttons |
+| `.grade-pill` | Individual grade button |
+| `.grade-pill.selected` | Active/selected grade (solid blue) |
+| `.grade-pill.mini` | Smaller variant used in summary card |
+| `.tag-input-container` | Chip + input flex-wrap box |
+| `.edit-chip` | Removable skill chip in modal |
+| `.chip-remove` | `✕` button inside chip |
+| `.tag-input` | Inline text input inside chip box |
+| `.tag-count` | `"X / 12"` counter badge |
+| `.modal-overlay` | Full-screen dimmed backdrop |
+| `.modal-content` | White modal card |
+| `.modal-header` | Title + close button row |
+| `.modal-body` | Scrollable form area |
+| `.modal-footer` | Delete (left) + Cancel/Save (right) |
+| `.auto-badge` | Green `"auto"` badge on Experience label |

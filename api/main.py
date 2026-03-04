@@ -19,19 +19,45 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# --- Procedure Lookup Table ---
+
+PROCEDURE_LOOKUP = {
+    "cholecystectomy":   {"base_minutes": 45, "multiplier": 1.2},
+    "appendectomy":      {"base_minutes": 35, "multiplier": 1.0},
+    "hernia repair":     {"base_minutes": 50, "multiplier": 1.1},
+    "prostatectomy":     {"base_minutes": 120, "multiplier": 1.4},
+    "colectomy":         {"base_minutes": 90, "multiplier": 1.35},
+    "bowel resection":   {"base_minutes": 95, "multiplier": 1.35},
+    "nephrectomy":       {"base_minutes": 80, "multiplier": 1.3},
+    "thyroidectomy":     {"base_minutes": 60, "multiplier": 1.15},
+    "suturing":          {"base_minutes": 15, "multiplier": 1.0},
+    "knot tying":        {"base_minutes": 12, "multiplier": 0.9},
+    "peg transfer":      {"base_minutes": 10, "multiplier": 0.85},
+    "cutting":           {"base_minutes": 8,  "multiplier": 0.9},
+    "default":           {"base_minutes": 40, "multiplier": 1.0},
+}
+
+def get_procedure_params(procedure_name: str) -> dict:
+    name = procedure_name.lower()
+    for keyword, params in PROCEDURE_LOOKUP.items():
+        if keyword in name:
+            return params
+    return PROCEDURE_LOOKUP["default"]
+
 # --- Pydantic Models ---
 
 class PredictionRequest(BaseModel):
-    task_type: str # suturing, peg_transfer, knot_tying, cutting
+    surgery_procedure: str  # Free-text, e.g. "Laparoscopic Cholecystectomy"
     booked_minutes: int
     complexity_level: int  # 1-5
-    session_index: int # fatigue proxy
-    experience_level: str # novice, intermediate, advanced
-    target_count: int # number of reps/targets
+    session_index: int  # fatigue proxy
+    experience_level: str  # novice, intermediate, advanced
+    target_count: int  # number of reps/targets
     tool_changes: int
-    fine_motor_ratio: str # low, medium, high
-    workspace_constraint: str # open, moderate, tight
-    time_of_day: str 
+    fine_motor_ratio: str  # low, medium, high
+    workspace_constraint: str  # open, moderate, tight
+    time_of_day: str
+    surgery_type: str  # open, laparoscopic, robotic
 
 class PredictionResponse(BaseModel):
     p50_minutes: float
@@ -63,18 +89,24 @@ class FullResponse(PredictionResponse, ExplanationResponse):
 # --- Business Logic ---
 
 def calculate_quantiles(req: PredictionRequest):
-    # Base times (minutes) for a standard "unit" of activity
-    # Assumptions for MVP heuristics (Surgical Training Context)
-    base_times = {
-        "suturing": 15,
-        "peg_transfer": 10,
-        "knot_tying": 12,
-        "cutting": 8
-    }
-    base = base_times.get(req.task_type.lower(), 15)
+    # Resolve procedure → base_minutes + procedure_multiplier
+    proc_params = get_procedure_params(req.surgery_procedure)
+    base = proc_params["base_minutes"]
+    proc_mult = proc_params["multiplier"]
+
+    # Surgery type multiplier
+    surgery_type_mult = 1.0
+    if req.surgery_type.lower() == "laparoscopic":
+        surgery_type_mult = 1.15
+    elif req.surgery_type.lower() == "robotic":
+        surgery_type_mult = 1.25
 
     factors = []
-    
+    factors.append(f"Procedure: {req.surgery_procedure}")
+
+    if req.surgery_type.lower() in ("laparoscopic", "robotic"):
+        factors.append(f"{req.surgery_type.capitalize()} approach")
+
     # 1. Experience Level (Major Factor)
     exp_mult = 1.0
     if req.experience_level.lower() == "novice":
@@ -83,13 +115,12 @@ def calculate_quantiles(req: PredictionRequest):
     elif req.experience_level.lower() == "advanced":
         exp_mult = 0.7
         factors.append("Advanced trainee pace")
-    
+
     # 2. Complexity & targets
-    # Scale base slightly by target count if it deviates from 'standard' (5)
     target_scale = 1.0 + (req.target_count - 5) * 0.05
     if req.target_count > 8:
         factors.append(f"High repetition count ({req.target_count})")
-        
+
     complexity_mult = 1.0 + (req.complexity_level - 1) * 0.1
     if req.complexity_level >= 4:
         factors.append(f"High procedure complexity (Lv {req.complexity_level})")
@@ -99,7 +130,7 @@ def calculate_quantiles(req: PredictionRequest):
     if req.workspace_constraint.lower() == "tight":
         constraint_mult = 1.25
         factors.append("Restricted workspace geometry")
-    
+
     # 4. Fatigue (Session Index)
     fatigue_mult = 1.0
     if req.session_index > 3:
@@ -112,23 +143,29 @@ def calculate_quantiles(req: PredictionRequest):
         factors.append("Evening session (circadian fatigue)")
 
     # 6. Tool overhead
-    tool_time = req.tool_changes * 1.5 # 1.5 mins per change
+    tool_time = req.tool_changes * 1.5
     if req.tool_changes > 2:
         factors.append(f"Frequent tool changes ({req.tool_changes})")
 
-    # Calculate P50 (Median)
-    # (Base * Experience * Complexity * Targets * Constraints * Fatigue) + Fixed Overheads
-    p50 = (base * exp_mult * complexity_mult * target_scale * constraint_mult * fatigue_mult) + tool_time
-    
-    # Derive P80/P90 (Uncertainty wedge)
-    # Novices have much wider variance than experts
-    uncertainty_base = 1.2 # default spread
+    # Calculate P50
+    p50 = (
+        base
+        * proc_mult
+        * surgery_type_mult
+        * exp_mult
+        * complexity_mult
+        * target_scale
+        * constraint_mult
+        * fatigue_mult
+    ) + tool_time
+
+    # Derive P80/P90
+    uncertainty_base = 1.2
     if req.experience_level.lower() == "novice":
         uncertainty_base = 1.4
     elif req.experience_level.lower() == "advanced":
         uncertainty_base = 1.1
 
-    # Fine motor tasks add variance too
     if req.fine_motor_ratio.lower() == "high":
         uncertainty_base += 0.1
         factors.append("High fine-motor demand increases variance")

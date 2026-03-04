@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 const API_URL = "http://localhost:8000/predict_and_explain";
 
@@ -18,6 +18,154 @@ const GRADE_TO_EXPERIENCE = {
 
 const RISK_ICONS = { green: "🟢", amber: "🟠", red: "🔴" };
 const RISK_LABELS = { green: "LOW RISK", amber: "MODERATE RISK", red: "HIGH RISK" };
+
+const PROCEDURE_SUGGESTIONS = [
+  "Cholecystectomy",
+  "Laparoscopic Cholecystectomy",
+  "Robotic Cholecystectomy",
+  "Appendectomy",
+  "Laparoscopic Appendectomy",
+  "Hernia Repair",
+  "Laparoscopic Hernia Repair",
+  "Robotic Hernia Repair",
+  "Prostatectomy",
+  "Robotic Prostatectomy",
+  "Laparoscopic Prostatectomy",
+  "Colectomy",
+  "Laparoscopic Colectomy",
+  "Robotic Colectomy",
+  "Bowel Resection",
+  "Laparoscopic Bowel Resection",
+  "Nephrectomy",
+  "Laparoscopic Nephrectomy",
+  "Robotic Nephrectomy",
+  "Thyroidectomy",
+  "Robotic Thyroidectomy",
+  "Suturing",
+  "Knot Tying",
+  "Peg Transfer",
+  "Cutting",
+  "Open Appendectomy",
+  "Open Colectomy",
+  "Open Nephrectomy",
+];
+
+// ─── Procedure Search Combobox ────────────────────────────────────────────────
+function ProcedureSearchInput({ value, onChange }) {
+  const [query, setQuery] = useState(value || "");
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(-1);
+  const wrapperRef = useRef(null);
+
+  const filtered = query.trim().length === 0
+    ? []
+    : PROCEDURE_SUGGESTIONS.filter(p =>
+        p.toLowerCase().includes(query.toLowerCase())
+      ).slice(0, 6);
+
+  // Close on outside click
+  useEffect(() => {
+    const handler = (e) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
+        setOpen(false);
+        setHighlighted(-1);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const handleInput = (e) => {
+    setQuery(e.target.value);
+    onChange(e.target.value);
+    setOpen(true);
+    setHighlighted(-1);
+  };
+
+  const handleSelect = (suggestion) => {
+    setQuery(suggestion);
+    onChange(suggestion);
+    setOpen(false);
+    setHighlighted(-1);
+  };
+
+  const handleKeyDown = (e) => {
+    if (!open || filtered.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlighted(h => Math.min(h + 1, filtered.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlighted(h => Math.max(h - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (highlighted >= 0) handleSelect(filtered[highlighted]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+      setHighlighted(-1);
+    }
+  };
+
+  // Highlight matching substring
+  const highlight = (text, query) => {
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if (idx === -1 || !query) return text;
+    return (
+      <>
+        {text.slice(0, idx)}
+        <mark className="suggestion-match">{text.slice(idx, idx + query.length)}</mark>
+        {text.slice(idx + query.length)}
+      </>
+    );
+  };
+
+  return (
+    <div className="procedure-combobox" ref={wrapperRef}>
+      <div className="procedure-input-wrapper">
+        <span className="procedure-search-icon">🔍</span>
+        <input
+          className="form-control procedure-search-input"
+          type="text"
+          placeholder="e.g. Robotic, Cholecystectomy…"
+          value={query}
+          onChange={handleInput}
+          onFocus={() => query.trim().length > 0 && setOpen(true)}
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+          aria-autocomplete="list"
+          aria-expanded={open && filtered.length > 0}
+        />
+        {query && (
+          <button
+            className="procedure-clear-btn"
+            type="button"
+            aria-label="Clear"
+            onClick={() => { setQuery(""); onChange(""); setOpen(false); }}
+          >✕</button>
+        )}
+      </div>
+      {open && filtered.length > 0 && (
+        <ul className="procedure-suggestions-list" role="listbox">
+          {filtered.map((s, i) => (
+            <li
+              key={s}
+              className={`procedure-suggestion-item ${i === highlighted ? "active" : ""}`}
+              role="option"
+              aria-selected={i === highlighted}
+              onMouseDown={() => handleSelect(s)}
+              onMouseEnter={() => setHighlighted(i)}
+            >
+              {highlight(s, query)}
+            </li>
+          ))}
+        </ul>
+      )}
+      {open && query.trim().length > 0 && filtered.length === 0 && (
+        <div className="procedure-no-match">No matching procedures — will use default estimate</div>
+      )}
+    </div>
+  );
+}
 
 // ─── Profile Modal ────────────────────────────────────────────────────────────
 function ProfileModal({ profile, onSave, onDelete, onClose }) {
@@ -329,7 +477,7 @@ export default function App() {
 
   // Form state
   const [formData, setFormData] = useState({
-    task_type: "suturing",
+    surgery_procedure: "Suturing",
     booked_minutes: 30,
     complexity_level: 3,
     session_index: 1,
@@ -338,7 +486,8 @@ export default function App() {
     tool_changes: 1,
     fine_motor_ratio: "medium",
     workspace_constraint: "moderate",
-    time_of_day: "morning"
+    time_of_day: "morning",
+    surgery_type: "laparoscopic"
   });
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -467,12 +616,19 @@ export default function App() {
 
             <div className="params-grid">
               <div className="input-group">
-                <label className="input-label">Task Type</label>
-                <select className="form-control" name="task_type" value={formData.task_type} onChange={handleChange}>
-                  <option value="suturing">Suturing</option>
-                  <option value="peg_transfer">Peg Transfer</option>
-                  <option value="knot_tying">Knot Tying</option>
-                  <option value="cutting">Cutting / Dissection</option>
+                <label className="input-label">Surgery Procedure</label>
+                <ProcedureSearchInput
+                  value={formData.surgery_procedure}
+                  onChange={(val) => setFormData(p => ({ ...p, surgery_procedure: val }))}
+                />
+              </div>
+
+              <div className="input-group">
+                <label className="input-label">Surgery Type</label>
+                <select className="form-control" name="surgery_type" value={formData.surgery_type} onChange={handleChange}>
+                  <option value="open">Open Surgery</option>
+                  <option value="laparoscopic">Laparoscopic</option>
+                  <option value="robotic">Robotic Surgery</option>
                 </select>
               </div>
 
