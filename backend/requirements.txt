@@ -1,7 +1,8 @@
-sqlmodel
-google-auth
-requests
 fastapi==0.109.0
 uvicorn==0.27.0
 pydantic==2.5.3
+pydantic-core==2.14.6
 python-multipart==0.0.9
+sqlmodel==0.0.14
+google-auth==2.27.0
+requests==2.31.0
