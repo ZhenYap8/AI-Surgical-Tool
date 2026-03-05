@@ -6,7 +6,6 @@ __pycache__/
 *.so
 *.egg
 *.egg-info/
-dist/
 build/
 .eggs/
 .pytest_cache/
@@ -66,8 +65,6 @@ logs/
 *.out
 *.err
 reports/
-*.html
-!web/**/*.html
 
 # ── Jupyter ────────────────────────────────────────────────────────────────────
 .ipynb_checkpoints/
@@ -75,9 +72,8 @@ reports/
 
 # ── Node / frontend ────────────────────────────────────────────────────────────
 node_modules/
-web/node_modules/
-web/dist/
-web/build/
+frontend/node_modules/
+frontend/dist/
 .pnp.*
 .yarn/
 
