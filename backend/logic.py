@@ -1,5 +1,5 @@
-from .models import PredictionRequest
-from .procedures import get_procedure_params
+from models import PredictionRequest
+from procedures import get_procedure_params
 
 
 def calculate_quantiles(req: PredictionRequest):
