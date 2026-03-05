@@ -405,21 +405,21 @@ function ResultsPanel({ result, bookedMinutes }) {
           </div>
           {/* Prediction range */}
           <div className="bar-row">
-            <div className="bar-meta">P50</div>
+            <div className="bar-meta">50%</div>
             <div className="bar-track">
               <div className="bar-fill p50-fill" style={{ width: pct(result.p50_minutes) }} />
               <span className="bar-value-label">{result.p50_minutes}m</span>
             </div>
           </div>
           <div className="bar-row">
-            <div className="bar-meta">P80</div>
+            <div className="bar-meta">80%</div>
             <div className="bar-track">
               <div className="bar-fill p80-fill" style={{ width: pct(result.p80_minutes) }} />
               <span className="bar-value-label">{result.p80_minutes}m</span>
             </div>
           </div>
           <div className="bar-row">
-            <div className="bar-meta">P90</div>
+            <div className="bar-meta">90%</div>
             <div className="bar-track">
               <div className="bar-fill p90-fill" style={{ width: pct(result.p90_minutes) }} />
               <span className="bar-value-label">{result.p90_minutes}m</span>
