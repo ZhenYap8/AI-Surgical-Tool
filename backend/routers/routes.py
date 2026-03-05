@@ -1,7 +1,10 @@
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
 from fastapi import APIRouter
 from models import PredictionRequest, PredictionResponse, ExplanationRequest, ExplanationResponse, FullResponse
 from logic import calculate_quantiles, determine_risk, estimate_overrun_prob, generate_explanation_data
-
 router = APIRouter()
 
 
