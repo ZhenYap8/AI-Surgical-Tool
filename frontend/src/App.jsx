@@ -738,7 +738,7 @@ export default function App() {
       {/* Footer */}
       <footer className="app-footer">
         <p><strong>⚠️ Trial Stage Disclaimer:</strong> This tool is in a pilot/testing phase. Predictions are for experimental logistics planning only and must not replace clinical judgement.</p>
-        <p className="attribution">Designed by Zhen Wei Yap</p>
+        <p className="attribution">Designed by Zhen Wei Yap and Jayden Wong</p>
       </footer>
 
       {/* Profile Modal */}
