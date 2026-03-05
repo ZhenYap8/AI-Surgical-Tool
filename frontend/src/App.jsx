@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 
-const API_URL = "http://localhost:8000/predict_and_explain";
+const API_URL = `${import.meta.env.VITE_API_URL}/predict_and_explain`;
 
 const GRADE_OPTIONS = [
   "CT1", "CT2",
