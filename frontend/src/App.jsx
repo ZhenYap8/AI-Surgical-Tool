@@ -709,12 +709,12 @@ export default function App() {
               <button className="btn-assess" onClick={assessRisk} disabled={loading}>
                 {loading ? (
                   <><span className="spinner" /> Analysing…</>
-                ) : "Assess Training Risk"}
+                ) : "🩺 Assess Training Risk"}
               </button>
 
               {error && (
                 <div className="error-banner">
-                  <strong>Error:</strong> {error}. Is the backend running on port 8000?
+                  <strong>Error:</strong> {error}
                 </div>
               )}
             </div>

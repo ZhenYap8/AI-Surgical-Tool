@@ -211,6 +211,14 @@ a:focus {
   .main-grid { grid-template-columns: 1fr; }
 }
 
+/* ── Input Panel ───────────────────────────────────────────────────────────── */
+.input-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding-bottom: var(--space-4);
+}
+
 /* ── NHS Cards ─────────────────────────────────────────────────────────────── */
 .card {
   background: var(--nhs-white);
@@ -220,6 +228,11 @@ a:focus {
   overflow: hidden;
   /* NHS left-accent bar */
   border-left: 4px solid var(--nhs-blue);
+}
+
+/* params-card needs visible overflow so the sticky button can work */
+.params-card {
+  overflow: hidden;
 }
 
 .card-header {
@@ -244,16 +257,8 @@ a:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-  position: sticky;
-  top: 88px;
-  max-height: calc(100vh - 96px);
-  overflow-y: auto;
-  padding-right: 4px;
-  scrollbar-width: thin;
-  scrollbar-color: var(--nhs-border-grey) transparent;
+  padding-bottom: var(--space-4);
 }
-.input-panel::-webkit-scrollbar { width: 4px; }
-.input-panel::-webkit-scrollbar-thumb { background: var(--nhs-border-grey); border-radius: 4px; }
 
 /* ── Profile Card ──────────────────────────────────────────────────────────── */
 .profile-card .card-header { padding: 0.85rem var(--space-4); }
@@ -408,7 +413,9 @@ a:focus {
   color: var(--nhs-black);
   background: var(--nhs-white);
   transition: border-color var(--transition), box-shadow var(--transition);
-  appearance: auto;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
   font-family: inherit;
 }
 .form-control:focus {
@@ -479,7 +486,7 @@ a:focus {
   padding-bottom: 0.85rem;
   background: var(--nhs-warm-yellow-bg);
   border-top: 1px solid var(--nhs-border-grey);
-  border-bottom: 1px solid var(--nhs-border-grey);
+  border-bottom: 1px solid var (--nhs-border-grey);
   border-left: 4px solid var(--nhs-warm-yellow);
   margin: 0.75rem 0;
   padding-left: var(--space-4);
@@ -535,6 +542,12 @@ a:focus {
   color: var(--nhs-grey);
   border-color: var(--nhs-mid-grey);
   cursor: not-allowed;
+}
+
+.btn-assess-wrapper {
+  background: var(--nhs-white);
+  border-top: 1px solid var(--nhs-border-grey);
+  padding: var(--space-3) 0;
 }
 
 .spinner {
