@@ -167,7 +167,8 @@ This repo is configured for Vercel **Services** — one project deploys both the
 | File | Purpose |
 |------|---------|
 | `vercel.json` | `experimentalServices` routing for frontend + backend |
-| `backend/pyproject.toml` | `[tool.vercel] entrypoint = "app.main:app"` |
+| `backend/vercel_app.py` | Vercel serverless entrypoint |
+| `backend/pyproject.toml` | `[tool.vercel] entrypoint = "vercel_app:app"` |
 | `frontend/.env.production` | `VITE_API_URL=/api` for same-origin API calls |
 
 ### Verify after deploy

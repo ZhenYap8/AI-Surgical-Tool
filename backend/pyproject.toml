@@ -2,10 +2,15 @@
 name = "ai-surgical-tool-api"
 version = "0.1.0"
 description = "Surgical training risk assessment API"
-requires-python = ">=3.9"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.110.0",
+    "pydantic>=2.0",
+    "python-multipart>=0.0.9",
+]
 
 [tool.vercel]
-entrypoint = "app.main:app"
+entrypoint = "vercel_app:app"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

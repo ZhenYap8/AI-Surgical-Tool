@@ -7,10 +7,12 @@
       "framework": "vite"
     },
     "backend": {
-      "entrypoint": "backend",
+      "root": "backend",
+      "entrypoint": "vercel_app.py",
       "routePrefix": "/api",
       "framework": "fastapi",
-      "maxDuration": 30
+      "maxDuration": 30,
+      "excludeFiles": ["tests/**", "requirements-dev.txt"]
     }
   }
 }
