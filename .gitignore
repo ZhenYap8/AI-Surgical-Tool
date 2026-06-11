@@ -49,7 +49,7 @@ datasets/
 *.sqlite3
 
 # ── Model artifacts ────────────────────────────────────────────────────────────
-models/
+/models/
 *.pt
 *.pth
 *.onnx

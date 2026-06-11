@@ -1,6 +1,11 @@
 import { useState, useEffect, useRef } from 'react'
-
-const API_URL = `${import.meta.env.VITE_API_URL || "http://localhost:8000"}/predict_and_explain`;
+import { PREDICT_AND_EXPLAIN_URL } from './api/config'
+import {
+  loadProfiles,
+  loadSelectedProfileId,
+  saveProfiles,
+  saveSelectedProfileId,
+} from './storage/profiles'
 
 const GRADE_OPTIONS = [
   "CT1", "CT2",
@@ -437,20 +442,60 @@ function ResultsPanel({ result, bookedMinutes }) {
       {/* Analysis */}
       <div className="card analysis-card">
         <div className="card-header">
-          <h4 className="card-title">Analysis</h4>
+          <h4 className="card-title">AI Procedure Analysis</h4>
         </div>
+
+        {result.matched_procedure && (
+          <div className="procedure-match-banner">
+            <div className="procedure-match-main">
+              <span className="procedure-match-label">Identified procedure</span>
+              <strong>{result.matched_procedure}</strong>
+            </div>
+            <div className="procedure-match-meta">
+              <span className="meta-pill">{result.procedure_category}</span>
+              <span className="meta-pill confidence-pill">
+                {Math.round((result.match_confidence || 0) * 100)}% match
+              </span>
+            </div>
+          </div>
+        )}
+
         <p className="analysis-summary">{result.explanation_text}</p>
+
+        {result.training_insights && result.training_insights.length > 0 && (
+          <div className="analysis-section">
+            <span className="analysis-section-label">Inputs & key factors</span>
+            <ul className="analysis-list">
+              {result.training_insights.map((item, i) => <li key={i}>{item}</li>)}
+            </ul>
+          </div>
+        )}
+
         {result.top_factors && result.top_factors.length > 0 && (
           <div className="factors-list">
-            <span className="factors-label">Key Factors:</span>
+            <span className="factors-label">Model drivers:</span>
             <div className="factors-chips">
               {result.top_factors.map((f, i) => <span key={i} className="factor-chip">{f}</span>)}
             </div>
           </div>
         )}
-        <ul className="analysis-bullets">
-          {result.explanation_bullets.map((b, i) => <li key={i}>{b}</li>)}
-        </ul>
+
+        {result.risk_hazards && result.risk_hazards.length > 0 && (
+          <div className="analysis-section">
+            <span className="analysis-section-label">Risks & hazards</span>
+            <ul className="analysis-list risk-list">
+              {result.risk_hazards.map((item, i) => <li key={i}>{item}</li>)}
+            </ul>
+          </div>
+        )}
+
+        <div className="analysis-section">
+          <span className="analysis-section-label">Schedule narrative</span>
+          <ul className="analysis-bullets narrative-bullets">
+            {result.explanation_bullets.map((b, i) => <li key={i}>{b}</li>)}
+          </ul>
+        </div>
+
         <div className={`recommendation-banner ${result.risk_color}`}>
           <strong>Recommendation: </strong>{result.recommended_action}
         </div>
@@ -461,17 +506,20 @@ function ResultsPanel({ result, bookedMinutes }) {
 
 // ─── Main App ─────────────────────────────────────────────────────────────────
 export default function App() {
-  // Profile state
-  const [profiles, setProfiles] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("surgeon_profiles")) || []; }
-    catch { return []; }
-  });
-  const [selectedProfileId, setSelectedProfileId] = useState("");
+  // Profile state — persisted in localStorage across refreshes
+  const [profiles, setProfiles] = useState(loadProfiles);
+  const [selectedProfileId, setSelectedProfileId] = useState(() =>
+    loadSelectedProfileId(loadProfiles())
+  );
   const [modalState, setModalState] = useState(null); // null | { profile | null }
 
   useEffect(() => {
-    localStorage.setItem("surgeon_profiles", JSON.stringify(profiles));
+    saveProfiles(profiles);
   }, [profiles]);
+
+  useEffect(() => {
+    saveSelectedProfileId(selectedProfileId);
+  }, [selectedProfileId]);
 
   const selectedProfile = profiles.find(p => p.id === selectedProfileId) || null;
 
@@ -504,18 +552,52 @@ export default function App() {
   const handleChange = (e) => {
     const { name, value } = e.target;
     const numFields = ["complexity_level", "booked_minutes", "session_index", "target_count", "tool_changes"];
-    setFormData(p => ({ ...p, [name]: numFields.includes(name) ? parseInt(value) || 0 : value }));
+
+    if (numFields.includes(name)) {
+      setFormData((p) => ({
+        ...p,
+        [name]: value === "" ? "" : Number.parseInt(value, 10),
+      }));
+      return;
+    }
+
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
   const assessRisk = async () => {
     setLoading(true);
     setError(null);
     setResult(null);
+
+    const bookedMinutes = Number.parseInt(String(formData.booked_minutes), 10);
+    if (formData.booked_minutes === "" || Number.isNaN(bookedMinutes) || bookedMinutes < 5) {
+      setError("Please enter a booked duration of at least 5 minutes.");
+      setLoading(false);
+      return;
+    }
+
+    const payload = {
+      ...formData,
+      booked_minutes: bookedMinutes,
+      complexity_level: Number.parseInt(String(formData.complexity_level), 10) || 3,
+      session_index: Number.parseInt(String(formData.session_index), 10) || 1,
+      target_count: Number.parseInt(String(formData.target_count), 10) || 5,
+      tool_changes: Number.parseInt(String(formData.tool_changes), 10) || 0,
+      ...(selectedProfile ? {
+        surgeon_name: selectedProfile.name,
+        surgeon_grade: selectedProfile.grade,
+        procedure_count: selectedProfile.proceduresPerformed,
+        risk_index: selectedProfile.riskIndex,
+        primary_procedure: selectedProfile.primaryProcedure || null,
+        profile_skills: selectedProfile.skills || [],
+      } : {}),
+    };
+
     try {
-      const res = await fetch(API_URL, {
+      const res = await fetch(PREDICT_AND_EXPLAIN_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData)
+        body: JSON.stringify(payload)
       });
       if (!res.ok) throw new Error(`Server error: ${res.status}`);
       setResult(await res.json());
@@ -531,6 +613,7 @@ export default function App() {
     const now = Date.now();
     if (profile.id) {
       setProfiles(p => p.map(x => x.id === profile.id ? { ...profile, updatedAt: now } : x));
+      setSelectedProfileId(profile.id);
     } else {
       const newProfile = { ...profile, id: String(now), createdAt: now, updatedAt: now };
       setProfiles(p => [...p, newProfile]);

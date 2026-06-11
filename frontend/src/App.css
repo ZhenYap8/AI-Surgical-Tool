@@ -117,6 +117,8 @@ a:focus {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
+  min-width: 0;
+  width: 100%;
 }
 
 /* ── NHS Header ────────────────────────────────────────────────────────────── */
@@ -202,13 +204,17 @@ a:focus {
 /* ── Main Grid ─────────────────────────────────────────────────────────────── */
 .main-grid {
   display: grid;
-  grid-template-columns: 400px 1fr;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
   gap: var(--space-5);
   align-items: start;
+  min-width: 0;
 }
 
-@media (max-width: 960px) {
-  .main-grid { grid-template-columns: 1fr; }
+/* Only stack on genuinely narrow viewports (not typical browser zoom) */
+@media (max-width: 860px) {
+  .main-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* ── Input Panel ───────────────────────────────────────────────────────────── */
@@ -217,6 +223,7 @@ a:focus {
   flex-direction: column;
   gap: var(--space-5);
   padding-bottom: var(--space-4);
+  min-width: 0;
 }
 
 /* ── NHS Cards ─────────────────────────────────────────────────────────────── */
@@ -250,14 +257,6 @@ a:focus {
   text-transform: uppercase;
   letter-spacing: 1px;
   color: var(--nhs-blue);
-}
-
-/* ── Input Panel ───────────────────────────────────────────────────────────── */
-.input-panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-5);
-  padding-bottom: var(--space-4);
 }
 
 /* ── Profile Card ──────────────────────────────────────────────────────────── */
@@ -574,7 +573,13 @@ a:focus {
 }
 
 /* ── Output Panel ──────────────────────────────────────────────────────────── */
-.output-panel { min-height: 400px; }
+.output-panel {
+  min-width: 0;
+  width: 100%;
+  min-height: 400px;
+  overflow: visible;
+  scroll-margin-top: calc(var(--space-6) + 80px);
+}
 
 .results-content {
   display: flex;
@@ -714,6 +719,81 @@ a:focus {
 /* Analysis */
 .analysis-card { padding-bottom: 0.5rem; }
 
+.procedure-match-banner {
+  margin: var(--space-4) var(--space-4) var(--space-3);
+  padding: var(--space-4);
+  background: var(--nhs-blue-light);
+  border-left: 6px solid var(--nhs-blue);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.procedure-match-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--nhs-grey);
+  margin-bottom: 0.2rem;
+}
+
+.procedure-match-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.meta-pill {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  background: var(--nhs-white);
+  border: 1px solid var(--nhs-border-grey);
+  color: var(--nhs-dark-grey);
+}
+
+.confidence-pill {
+  border-color: var(--nhs-blue);
+  color: var(--nhs-blue-dark);
+}
+
+.analysis-section {
+  margin: 0 var(--space-4) var(--space-4);
+}
+
+.analysis-section-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--nhs-grey);
+  margin-bottom: 0.45rem;
+}
+
+.analysis-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.875rem;
+  line-height: 1.7;
+  color: var(--nhs-dark-grey);
+}
+
+.analysis-list li { margin-bottom: 0.3rem; }
+
+.risk-list li {
+  color: var(--nhs-black);
+}
+
+.narrative-bullets li {
+  color: var(--nhs-black);
+  font-size: 0.9rem;
+}
+
 .analysis-summary {
   padding: var(--space-4) var(--space-4) var(--space-2);
   font-size: 0.9rem;
@@ -778,16 +858,41 @@ a:focus {
 
 /* Empty state */
 .empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: 280px;
   background: var(--nhs-white);
   border: 2px dashed var(--nhs-border-grey);
   border-radius: 0;
   padding: var(--space-8) var(--space-6);
   text-align: center;
   color: var(--nhs-grey);
+  overflow: visible;
 }
-.empty-icon { font-size: 3rem; display: block; margin-bottom: var(--space-4); opacity: 0.4; }
-.empty-state h3 { font-size: 1.1rem; color: var(--nhs-dark-grey); margin-bottom: 0.5rem; }
-.empty-state p { font-size: 0.9rem; line-height: 1.7; max-width: 340px; margin: 0 auto; }
+.empty-icon {
+  font-size: clamp(2rem, 5vw, 3rem);
+  line-height: 1;
+  flex-shrink: 0;
+  width: auto;
+  margin-bottom: var(--space-4);
+  opacity: 1;
+}
+.empty-state h3 {
+  font-size: clamp(1rem, 2.5vw, 1.1rem);
+  color: var(--nhs-black);
+  margin-bottom: 0.5rem;
+}
+.empty-state p {
+  font-size: clamp(0.85rem, 2vw, 0.9rem);
+  line-height: 1.7;
+  max-width: 340px;
+  margin: 0 auto;
+  color: var(--nhs-dark-grey);
+}
 
 /* ── NHS Modal ─────────────────────────────────────────────────────────────── */
 .modal-overlay {
