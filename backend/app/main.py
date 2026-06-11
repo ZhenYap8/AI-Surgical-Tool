@@ -1,9 +1,14 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routers.routes import router
 
-app = FastAPI(title="AI Surgical Tool API")
+# Vercel mounts this service at /api when using experimentalServices.
+root_path = "/api" if os.getenv("VERCEL") else ""
+
+app = FastAPI(title="AI Surgical Tool API", root_path=root_path)
 
 app.add_middleware(
     CORSMiddleware,

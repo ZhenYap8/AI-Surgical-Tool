@@ -137,3 +137,56 @@ make test-frontend   # vitest
 | POST | `/explain` | Explanation from prior prediction |
 | POST | `/predict_and_explain` | Combined (used by frontend) |
 | GET | `/docs` | Swagger UI |
+
+## Deploy to Vercel (frontend + backend)
+
+This repo is configured for Vercel **Services** — one project deploys both the Vite frontend and FastAPI backend.
+
+### Prerequisites
+
+- [Vercel account](https://vercel.com) connected to GitHub
+- Vercel CLI ≥ 48.1.8 (optional): `npm i -g vercel`
+
+### Dashboard setup
+
+1. **Import** `ZhenYap8/AI-Surgical-Tool` on Vercel.
+2. Set **Framework Preset** to **Services** (Vercel reads root `vercel.json`).
+3. Confirm both services are detected:
+   - `frontend` → `/` (Vite)
+   - `backend` → `/api` (FastAPI)
+4. Add environment variable (Production + Preview):
+
+   | Name | Value |
+   |------|-------|
+   | `VITE_API_URL` | `/api` |
+
+5. Click **Deploy**.
+
+### What’s configured in the repo
+
+| File | Purpose |
+|------|---------|
+| `vercel.json` | `experimentalServices` routing for frontend + backend |
+| `backend/pyproject.toml` | `[tool.vercel] entrypoint = "app.main:app"` |
+| `frontend/.env.production` | `VITE_API_URL=/api` for same-origin API calls |
+
+### Verify after deploy
+
+```bash
+curl https://<your-app>.vercel.app/api/
+curl https://<your-app>.vercel.app/api/docs
+```
+
+Open the site, run an assessment, and confirm network requests hit `/api/predict_and_explain`.
+
+### Local development (unchanged)
+
+Backend and frontend still run separately locally — `VITE_API_URL` defaults to `http://localhost:8000` via `frontend/.env.local` or `.env.example`.
+
+### Alternative: frontend-only on Vercel
+
+To keep the API on Render instead, deploy only `frontend` (root directory `frontend`) and set:
+
+```
+VITE_API_URL=https://ai-surgical-tool.onrender.com
+```

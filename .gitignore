@@ -36,6 +36,7 @@ datasets/
 *.json
 !package.json
 !package-lock.json
+!vercel.json
 *.jsonl
 *.parquet
 *.feather
