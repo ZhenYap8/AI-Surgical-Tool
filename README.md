@@ -71,7 +71,7 @@ make dev
 Or run separately in two terminals:
 
 ```bash
-# Terminal 1 — API at http://localhost:8000
+# Terminal 1 — API at http://localhost:8000 (also on LAN via 0.0.0.0)
 make backend
 
 # Terminal 2 — UI at http://localhost:5173
@@ -80,6 +80,16 @@ make frontend
 
 Swagger docs: `http://localhost:8000/docs`
 
+### Open on a phone (same Wi‑Fi)
+
+Both servers bind to `0.0.0.0`, so a phone on the same network can use the app:
+
+1. Run `make dev` on your computer.
+2. In the Vite terminal output, copy the **Network** URL (e.g. `http://192.168.1.42:5173`).
+3. Open that URL in the phone’s browser.
+
+The frontend rewrites `localhost` API URLs to the same host IP, so assessments call `http://<same-ip>:8000` automatically. Keep `VITE_API_URL=/api` for Vercel production (unchanged).
+
 ### Environment variables
 
 Copy the frontend example env file (optional — defaults work for local dev):
@@ -87,7 +97,6 @@ Copy the frontend example env file (optional — defaults work for local dev):
 ```bash
 cp frontend/.env.example frontend/.env.local
 ```
-
 ## Tests
 
 ```bash

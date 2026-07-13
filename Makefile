@@ -9,14 +9,15 @@ install-frontend:
 	cd frontend && npm install
 
 dev:
-	@echo "Starting backend (http://localhost:8000) and frontend (http://localhost:5173)..."
+	@echo "Starting backend (0.0.0.0:8000) and frontend (0.0.0.0:5173)..."
+	@echo "On this machine: http://localhost:5173 — on phone (same Wi-Fi): use the Vite Network URL"
 	@trap 'kill 0' EXIT; \
-		cd backend && . venv/bin/activate && uvicorn app.main:app --reload --port 8000 & \
+		cd backend && . venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000 & \
 		cd frontend && npm run dev & \
 		wait
 
 backend:
-	cd backend && . venv/bin/activate && uvicorn app.main:app --reload --port 8000
+	cd backend && . venv/bin/activate && uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 frontend:
 	cd frontend && npm run dev

@@ -68,7 +68,7 @@ function ProcedureSearchInput({ value, onChange }) {
         p.toLowerCase().includes(query.toLowerCase())
       ).slice(0, 6);
 
-  // Close on outside click
+  // Close on outside click / tap (mousedown + touchstart for mobile)
   useEffect(() => {
     const handler = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
@@ -77,7 +77,11 @@ function ProcedureSearchInput({ value, onChange }) {
       }
     };
     document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
+    document.addEventListener("touchstart", handler, { passive: true });
+    return () => {
+      document.removeEventListener("mousedown", handler);
+      document.removeEventListener("touchstart", handler);
+    };
   }, []);
 
   const handleInput = (e) => {
@@ -540,6 +544,7 @@ export default function App() {
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const resultsRef = useRef(null);
 
   // When profile changes, sync experience_level
   useEffect(() => {
@@ -548,6 +553,12 @@ export default function App() {
       setFormData(p => ({ ...p, experience_level: level }));
     }
   }, [selectedProfileId]);
+
+  // After a successful assessment, scroll results into view (stacked mobile layout)
+  useEffect(() => {
+    if (!result) return;
+    resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [result]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -805,7 +816,7 @@ export default function App() {
         </aside>
 
         {/* ── RIGHT: Output Panel ── */}
-        <main className="output-panel">
+        <main className="output-panel" ref={resultsRef}>
           {result ? (
             <ResultsPanel result={result} bookedMinutes={formData.booked_minutes} />
           ) : (
